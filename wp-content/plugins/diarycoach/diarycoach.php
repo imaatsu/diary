@@ -14,14 +14,25 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+// Load required classes
+require_once plugin_dir_path( __FILE__ ) . 'includes/class-diarycoach-database.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/class-diarycoach-rest-api.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/class-diarycoach-shortcode.php';
+
 // Plugin activation
 register_activation_hook( __FILE__, 'diarycoach_activate' );
 function diarycoach_activate() {
-    // Placeholder for activation logic
+    DiaryCoach_Database::create_table();
 }
 
 // Plugin deactivation
 register_deactivation_hook( __FILE__, 'diarycoach_deactivate' );
 function diarycoach_deactivate() {
-    // Placeholder for deactivation logic
+    // Cleanup logic (if needed in future)
 }
+
+// Register REST API routes
+add_action( 'rest_api_init', array( 'DiaryCoach_REST_API', 'register_routes' ) );
+
+// Register shortcode
+add_action( 'init', array( 'DiaryCoach_Shortcode', 'register' ) );
