@@ -1,5 +1,6 @@
 # Environment files
 docker/.env
+gitconfig.md
 
 # Docker volumes
 docker/db_data/

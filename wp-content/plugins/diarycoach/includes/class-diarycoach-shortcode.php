@@ -83,6 +83,14 @@ class DiaryCoach_Shortcode {
                 <div id="diarycoach-save-message" class="diarycoach-message"></div>
             </div>
 
+            <div class="diarycoach-shadowing-section">
+                <h3>Shadowing Practice</h3>
+                <button id="diarycoach-random-btn" class="diarycoach-btn diarycoach-btn-shadowing">
+                    🎲 Get Random Entry for Practice
+                </button>
+                <div id="diarycoach-random-result" class="diarycoach-random-result"></div>
+            </div>
+
             <div class="diarycoach-list-section">
                 <h3>Recent Entries</h3>
                 <div id="diarycoach-entries-list" class="diarycoach-entries-list">

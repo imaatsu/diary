@@ -11,6 +11,7 @@
     function init() {
         const saveBtn = document.getElementById('diarycoach-save-btn');
         const closeDetailBtn = document.getElementById('diarycoach-close-detail-btn');
+        const randomBtn = document.getElementById('diarycoach-random-btn');
 
         if (saveBtn) {
             saveBtn.addEventListener('click', handleSave);
@@ -18,6 +19,10 @@
 
         if (closeDetailBtn) {
             closeDetailBtn.addEventListener('click', closeDetail);
+        }
+
+        if (randomBtn) {
+            randomBtn.addEventListener('click', handleRandomEntry);
         }
 
         // Load entries on init
@@ -277,12 +282,44 @@
             html += '<div class="diarycoach-review-section">';
             html += '<h5>Read Aloud Practice</h5>';
             html += `<p class="diarycoach-review-readaloud">${escapeHtml(review.readAloud)}</p>`;
-            html += '<button class="diarycoach-btn diarycoach-btn-speak" disabled>Speak (Phase 3)</button>';
+            html += `<button class="diarycoach-btn diarycoach-btn-speak" data-text="${escapeHtml(review.readAloud)}">🔊 Speak</button>`;
             html += '</div>';
         }
 
         html += '</div>';
+
+        // Add event listeners for speak buttons after rendering
+        setTimeout(() => {
+            const speakBtns = document.querySelectorAll('.diarycoach-btn-speak');
+            speakBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const text = this.getAttribute('data-text');
+                    speakText(text);
+                });
+            });
+        }, 100);
+
         return html;
+    }
+
+    /**
+     * Speak text using Web Speech API
+     */
+    function speakText(text) {
+        if (!('speechSynthesis' in window)) {
+            alert('Sorry, your browser does not support text-to-speech.');
+            return;
+        }
+
+        // Cancel any ongoing speech
+        window.speechSynthesis.cancel();
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'en-US';
+        utterance.rate = 0.9; // Slightly slower for learning
+        utterance.pitch = 1.0;
+
+        window.speechSynthesis.speak(utterance);
     }
 
     /**
@@ -305,6 +342,164 @@
             messageDiv.textContent = '';
             messageDiv.className = 'diarycoach-message';
         }, 3000);
+    }
+
+    /**
+     * Handle random entry button click
+     */
+    function handleRandomEntry() {
+        const randomBtn = document.getElementById('diarycoach-random-btn');
+        const resultDiv = document.getElementById('diarycoach-random-result');
+
+        randomBtn.disabled = true;
+        randomBtn.textContent = 'Loading...';
+        resultDiv.innerHTML = '';
+
+        fetch(diarycoachSettings.apiUrl + '/shadowing/random', {
+            headers: {
+                'X-WP-Nonce': diarycoachSettings.nonce
+            }
+        })
+        .then(response => response.json())
+        .then(entry => {
+            if (!entry || !entry.id) {
+                resultDiv.innerHTML = '<p class="diarycoach-message diarycoach-message-error">No entries available for practice.</p>';
+                return;
+            }
+
+            displayRandomEntry(entry);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            resultDiv.innerHTML = '<p class="diarycoach-message diarycoach-message-error">Error loading entry</p>';
+        })
+        .finally(() => {
+            randomBtn.disabled = false;
+            randomBtn.textContent = '🎲 Get Random Entry for Practice';
+        });
+    }
+
+    /**
+     * Display random entry for shadowing
+     */
+    function displayRandomEntry(entry) {
+        const resultDiv = document.getElementById('diarycoach-random-result');
+        const date = new Date(entry.created_at);
+        const dateStr = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+
+        let html = `
+            <div class="diarycoach-random-card">
+                <div class="diarycoach-random-header">
+                    <div class="diarycoach-entry-date">${dateStr}</div>
+                    <div class="diarycoach-shadowing-count">Practiced: ${entry.shadowing_count} times</div>
+                </div>
+        `;
+
+        // Show review if available
+        if (entry.review_json) {
+            const review = JSON.parse(entry.review_json);
+
+            if (review.readAloud) {
+                html += `
+                    <div class="diarycoach-shadowing-text">
+                        <h4>Practice Text</h4>
+                        <p class="diarycoach-review-readaloud">${escapeHtml(review.readAloud)}</p>
+                        <button class="diarycoach-btn diarycoach-btn-speak" data-text="${escapeHtml(review.readAloud)}">
+                            🔊 Listen
+                        </button>
+                    </div>
+                `;
+            }
+
+            // Show alternatives as reference
+            if (review.alternatives && review.alternatives.length > 0) {
+                html += `
+                    <div class="diarycoach-shadowing-alternatives">
+                        <h5>Reference Expressions</h5>
+                        <ul class="diarycoach-review-alternatives">
+                `;
+                review.alternatives.forEach(alt => {
+                    html += `<li>${escapeHtml(alt)}</li>`;
+                });
+                html += `
+                        </ul>
+                    </div>
+                `;
+            }
+        } else {
+            // No review, show original text
+            html += `
+                <div class="diarycoach-shadowing-text">
+                    <h4>Original Text</h4>
+                    <p>${escapeHtml(entry.original_text)}</p>
+                    <button class="diarycoach-btn diarycoach-btn-speak" data-text="${escapeHtml(entry.original_text)}">
+                        🔊 Listen
+                    </button>
+                </div>
+            `;
+        }
+
+        html += `
+                <div class="diarycoach-shadowing-actions">
+                    <button class="diarycoach-btn diarycoach-btn-primary" id="diarycoach-mark-practiced-btn" data-id="${entry.id}">
+                        ✓ Mark as Practiced
+                    </button>
+                </div>
+            </div>
+        `;
+
+        resultDiv.innerHTML = html;
+
+        // Add event listeners
+        const speakBtns = resultDiv.querySelectorAll('.diarycoach-btn-speak');
+        speakBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const text = this.getAttribute('data-text');
+                speakText(text);
+            });
+        });
+
+        const markBtn = document.getElementById('diarycoach-mark-practiced-btn');
+        if (markBtn) {
+            markBtn.addEventListener('click', function() {
+                const id = this.getAttribute('data-id');
+                markAsPracticed(id);
+            });
+        }
+    }
+
+    /**
+     * Mark entry as practiced
+     */
+    function markAsPracticed(id) {
+        const markBtn = document.getElementById('diarycoach-mark-practiced-btn');
+        const resultDiv = document.getElementById('diarycoach-random-result');
+
+        markBtn.disabled = true;
+        markBtn.textContent = 'Saving...';
+
+        fetch(diarycoachSettings.apiUrl + '/entries/' + id + '/shadowed', {
+            method: 'POST',
+            headers: {
+                'X-WP-Nonce': diarycoachSettings.nonce
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                resultDiv.innerHTML = `
+                    <p class="diarycoach-message diarycoach-message-success">
+                        Great job! Practice recorded. Click the button above to get another entry.
+                    </p>
+                `;
+            } else {
+                throw new Error('Failed to record practice');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            resultDiv.innerHTML = '<p class="diarycoach-message diarycoach-message-error">Error recording practice</p>';
+        });
     }
 
     /**

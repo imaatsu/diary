@@ -47,6 +47,20 @@ class DiaryCoach_REST_API {
             'callback' => array( __CLASS__, 'review_entry' ),
             'permission_callback' => array( __CLASS__, 'check_permission' )
         ) );
+
+        // Get random entry for shadowing
+        register_rest_route( self::NAMESPACE, '/shadowing/random', array(
+            'methods' => 'GET',
+            'callback' => array( __CLASS__, 'get_random_shadowing' ),
+            'permission_callback' => array( __CLASS__, 'check_permission' )
+        ) );
+
+        // Record shadowing practice
+        register_rest_route( self::NAMESPACE, '/entries/(?P<id>\d+)/shadowed', array(
+            'methods' => 'POST',
+            'callback' => array( __CLASS__, 'record_shadowing' ),
+            'permission_callback' => array( __CLASS__, 'check_permission' )
+        ) );
     }
 
     /**
@@ -163,5 +177,60 @@ class DiaryCoach_REST_API {
         }
 
         return rest_ensure_response( $review );
+    }
+
+    /**
+     * Get random entry for shadowing endpoint
+     */
+    public static function get_random_shadowing( $request ) {
+        $entry = DiaryCoach_Database::get_random_entry();
+
+        if ( empty( $entry ) ) {
+            return new WP_Error(
+                'no_entries',
+                'No entries available for shadowing',
+                array( 'status' => 404 )
+            );
+        }
+
+        return rest_ensure_response( $entry );
+    }
+
+    /**
+     * Record shadowing practice endpoint
+     */
+    public static function record_shadowing( $request ) {
+        $id = intval( $request->get_param( 'id' ) );
+
+        // Verify entry exists
+        $entry = DiaryCoach_Database::get_entry( $id );
+
+        if ( empty( $entry ) ) {
+            return new WP_Error(
+                'entry_not_found',
+                'Entry not found',
+                array( 'status' => 404 )
+            );
+        }
+
+        // Increment shadowing count
+        $updated = DiaryCoach_Database::increment_shadowing( $id );
+
+        if ( ! $updated ) {
+            return new WP_Error(
+                'update_failed',
+                'Failed to update shadowing count',
+                array( 'status' => 500 )
+            );
+        }
+
+        // Get updated entry
+        $updated_entry = DiaryCoach_Database::get_entry( $id );
+
+        return rest_ensure_response( array(
+            'success' => true,
+            'shadowing_count' => $updated_entry['shadowing_count'],
+            'last_shadowed_at' => $updated_entry['last_shadowed_at']
+        ) );
     }
 }

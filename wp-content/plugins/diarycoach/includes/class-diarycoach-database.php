@@ -158,4 +158,73 @@ class DiaryCoach_Database {
 
         return $result !== false;
     }
+
+    /**
+     * Get random entry for shadowing practice (weighted selection)
+     */
+    public static function get_random_entry() {
+        global $wpdb;
+
+        $table_name = self::get_table_name();
+
+        // First, try to get reviewed entries (priority)
+        $candidates = $wpdb->get_results(
+            "SELECT id, shadowing_count, last_shadowed_at
+             FROM $table_name
+             WHERE review_json IS NOT NULL
+             ORDER BY RAND()
+             LIMIT 100"
+        );
+
+        // If no reviewed entries, get all entries
+        if ( empty( $candidates ) ) {
+            $candidates = $wpdb->get_results(
+                "SELECT id, shadowing_count, last_shadowed_at
+                 FROM $table_name
+                 ORDER BY RAND()
+                 LIMIT 100"
+            );
+        }
+
+        // If still no entries, return null
+        if ( empty( $candidates ) ) {
+            return null;
+        }
+
+        // Calculate weights for each candidate
+        $weights = array();
+        $total_weight = 0;
+
+        foreach ( $candidates as $candidate ) {
+            // Base weight: 1 / (1 + shadowing_count)
+            $weight = 1 / ( 1 + intval( $candidate->shadowing_count ) );
+
+            // Penalty for recently shadowed (within 24 hours)
+            if ( ! empty( $candidate->last_shadowed_at ) ) {
+                $last_shadowed_time = strtotime( $candidate->last_shadowed_at );
+                $time_diff = time() - $last_shadowed_time;
+
+                if ( $time_diff < 86400 ) { // 24 hours
+                    $weight *= 0.3;
+                }
+            }
+
+            $weights[ $candidate->id ] = $weight;
+            $total_weight += $weight;
+        }
+
+        // Roulette selection
+        $random_value = mt_rand( 0, (int)( $total_weight * 1000 ) ) / 1000;
+        $cumulative = 0;
+
+        foreach ( $weights as $id => $weight ) {
+            $cumulative += $weight;
+            if ( $cumulative >= $random_value ) {
+                return self::get_entry( $id );
+            }
+        }
+
+        // Fallback: return first candidate
+        return self::get_entry( $candidates[0]->id );
+    }
 }
