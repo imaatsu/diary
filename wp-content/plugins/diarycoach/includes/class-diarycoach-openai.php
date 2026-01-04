@@ -221,9 +221,10 @@ Required JSON format:
 
         // Handle errors
         if ( is_wp_error( $response ) ) {
+            error_log( 'DiaryCoach OpenAI API connection failed: ' . $response->get_error_message() );
             return new WP_Error(
                 'api_request_failed',
-                'Failed to connect to OpenAI API: ' . $response->get_error_message(),
+                'Failed to connect to AI service. Please try again later.',
                 array( 'status' => 500 )
             );
         }
@@ -231,9 +232,11 @@ Required JSON format:
         $response_code = wp_remote_retrieve_response_code( $response );
         if ( $response_code !== 200 ) {
             $body = wp_remote_retrieve_body( $response );
+            error_log( sprintf( 'DiaryCoach OpenAI API error (code %d): %s', $response_code, $body ) );
+
             return new WP_Error(
                 'api_error',
-                sprintf( 'OpenAI API returned error (code %d): %s', $response_code, $body ),
+                'AI service is currently unavailable. Please try again later.',
                 array( 'status' => 500 )
             );
         }
@@ -243,9 +246,10 @@ Required JSON format:
         $data = json_decode( $body, true );
 
         if ( empty( $data['choices'][0]['message']['content'] ) ) {
+            error_log( 'DiaryCoach OpenAI API returned invalid response structure' );
             return new WP_Error(
                 'invalid_response',
-                'Invalid response from OpenAI API',
+                'AI service returned an invalid response. Please try again.',
                 array( 'status' => 500 )
             );
         }
@@ -255,9 +259,10 @@ Required JSON format:
         $review = json_decode( $review_json, true );
 
         if ( json_last_error() !== JSON_ERROR_NONE ) {
+            error_log( 'DiaryCoach JSON parse error: ' . json_last_error_msg() . ' | Content: ' . $review_json );
             return new WP_Error(
                 'json_parse_error',
-                'Failed to parse review JSON: ' . json_last_error_msg(),
+                'Failed to parse AI response. Please try again.',
                 array( 'status' => 500 )
             );
         }
@@ -266,9 +271,10 @@ Required JSON format:
         $required_fields = array( 'corrected', 'alternatives', 'notes', 'readAloud' );
         foreach ( $required_fields as $field ) {
             if ( ! isset( $review[ $field ] ) ) {
+                error_log( sprintf( 'DiaryCoach review missing field: %s | Review: %s', $field, $review_json ) );
                 return new WP_Error(
                     'invalid_review_format',
-                    sprintf( 'Review missing required field: %s', $field ),
+                    'AI response is incomplete. Please try again.',
                     array( 'status' => 500 )
                 );
             }

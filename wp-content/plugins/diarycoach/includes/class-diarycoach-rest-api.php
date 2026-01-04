@@ -71,10 +71,23 @@ class DiaryCoach_REST_API {
     }
 
     /**
-     * Permission callback
+     * Permission callback with explicit nonce verification
      */
-    public static function check_permission() {
-        return is_user_logged_in();
+    public static function check_permission( $request ) {
+        // Check if user is logged in
+        if ( ! is_user_logged_in() ) {
+            return false;
+        }
+
+        // Explicit nonce verification for additional security
+        $nonce = $request->get_header( 'X-WP-Nonce' );
+
+        if ( empty( $nonce ) || ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+            error_log( 'DiaryCoach REST API: Nonce verification failed' );
+            return false;
+        }
+
+        return true;
     }
 
     /**
