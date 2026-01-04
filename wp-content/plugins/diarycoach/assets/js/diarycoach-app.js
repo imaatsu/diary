@@ -101,8 +101,13 @@
 
                 html += `
                     <li class="diarycoach-entry-item" data-id="${entry.id}">
-                        <div class="diarycoach-entry-date">${dateStr}</div>
-                        <div class="diarycoach-entry-preview">${escapeHtml(preview)}</div>
+                        <div class="diarycoach-entry-content">
+                            <div class="diarycoach-entry-date">${dateStr}</div>
+                            <div class="diarycoach-entry-preview">${escapeHtml(preview)}</div>
+                        </div>
+                        <button class="diarycoach-btn-delete" data-id="${entry.id}" title="Delete entry">
+                            🗑️
+                        </button>
                     </li>
                 `;
             });
@@ -113,9 +118,22 @@
             // Add click handlers
             const entryItems = listDiv.querySelectorAll('.diarycoach-entry-item');
             entryItems.forEach(item => {
-                item.addEventListener('click', function() {
+                const content = item.querySelector('.diarycoach-entry-content');
+                if (content) {
+                    content.addEventListener('click', function() {
+                        const id = item.getAttribute('data-id');
+                        loadEntry(id);
+                    });
+                }
+            });
+
+            // Add delete button handlers
+            const deleteBtns = listDiv.querySelectorAll('.diarycoach-btn-delete');
+            deleteBtns.forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
                     const id = this.getAttribute('data-id');
-                    loadEntry(id);
+                    handleDelete(id);
                 });
             });
         })
@@ -499,6 +517,52 @@
         .catch(error => {
             console.error('Error:', error);
             resultDiv.innerHTML = '<p class="diarycoach-message diarycoach-message-error">Error recording practice</p>';
+        });
+    }
+
+    /**
+     * Handle delete entry
+     */
+    function handleDelete(id) {
+        if (!confirm('Are you sure you want to delete this entry? This action cannot be undone.')) {
+            return;
+        }
+
+        fetch(diarycoachSettings.apiUrl + '/entries/' + id, {
+            method: 'DELETE',
+            headers: {
+                'X-WP-Nonce': diarycoachSettings.nonce
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Close detail view if the deleted entry is currently displayed
+                const detailSection = document.getElementById('diarycoach-detail-section');
+                if (detailSection.style.display !== 'none') {
+                    closeDetail();
+                }
+
+                // Reload entries list
+                loadEntries();
+
+                // Show success message temporarily
+                const listSection = document.querySelector('.diarycoach-list-section');
+                const successMsg = document.createElement('div');
+                successMsg.className = 'diarycoach-message diarycoach-message-success';
+                successMsg.textContent = 'Entry deleted successfully';
+                listSection.insertBefore(successMsg, listSection.firstChild);
+
+                setTimeout(() => {
+                    successMsg.remove();
+                }, 3000);
+            } else {
+                throw new Error('Failed to delete entry');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to delete entry. Please try again.');
         });
     }
 

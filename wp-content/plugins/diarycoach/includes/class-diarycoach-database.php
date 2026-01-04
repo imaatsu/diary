@@ -160,6 +160,23 @@ class DiaryCoach_Database {
     }
 
     /**
+     * Delete entry
+     */
+    public static function delete_entry( $id ) {
+        global $wpdb;
+
+        $table_name = self::get_table_name();
+
+        $result = $wpdb->delete(
+            $table_name,
+            array( 'id' => $id ),
+            array( '%d' )
+        );
+
+        return $result !== false;
+    }
+
+    /**
      * Get random entry for shadowing practice (weighted selection)
      */
     public static function get_random_entry() {

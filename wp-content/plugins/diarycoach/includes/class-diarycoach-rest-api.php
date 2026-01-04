@@ -41,6 +41,13 @@ class DiaryCoach_REST_API {
             'permission_callback' => array( __CLASS__, 'check_permission' )
         ) );
 
+        // Delete entry
+        register_rest_route( self::NAMESPACE, '/entries/(?P<id>\d+)', array(
+            'methods' => 'DELETE',
+            'callback' => array( __CLASS__, 'delete_entry' ),
+            'permission_callback' => array( __CLASS__, 'check_permission' )
+        ) );
+
         // Review entry (AI)
         register_rest_route( self::NAMESPACE, '/entries/(?P<id>\d+)/review', array(
             'methods' => 'POST',
@@ -177,6 +184,40 @@ class DiaryCoach_REST_API {
         }
 
         return rest_ensure_response( $review );
+    }
+
+    /**
+     * Delete entry endpoint
+     */
+    public static function delete_entry( $request ) {
+        $id = intval( $request->get_param( 'id' ) );
+
+        // Verify entry exists
+        $entry = DiaryCoach_Database::get_entry( $id );
+
+        if ( empty( $entry ) ) {
+            return new WP_Error(
+                'entry_not_found',
+                'Entry not found',
+                array( 'status' => 404 )
+            );
+        }
+
+        // Delete entry
+        $deleted = DiaryCoach_Database::delete_entry( $id );
+
+        if ( ! $deleted ) {
+            return new WP_Error(
+                'delete_failed',
+                'Failed to delete entry',
+                array( 'status' => 500 )
+            );
+        }
+
+        return rest_ensure_response( array(
+            'success' => true,
+            'id' => $id
+        ) );
     }
 
     /**
