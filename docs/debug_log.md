@@ -10,6 +10,8 @@
 |------|-------------|---------|------|---------|--------|
 | 2026-01-04 | docs/implementation_plan.md | セクション22「プロジェクト固有設定」を追記 | ローカル環境設定（ポート8020等）を確定事項として記録 | implementation_plan.md末尾に追加 | Claude |
 | 2026-01-04 | docs/debug_log.md | 新規作成 | CLAUDE.mdのルールに従い、修正履歴管理ファイルを作成 | 新規ファイル | Claude |
+| 2026-01-04 | wp-content/plugins/diarycoach/diarycoach.php | ファイルパーミッション修正（600→644） | WordPressがプラグインファイルを読み取れるようにするため | プラグイン有効化可能に | Claude |
+| 2026-01-04 | docs/work_status.md | Phase 0完了状況を更新 | Phase 0の全タスク完了を記録 | Phase 0セクションと進捗サマリーを更新 | Claude |
 
 ---
 
