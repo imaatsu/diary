@@ -40,6 +40,13 @@ class DiaryCoach_REST_API {
             'callback' => array( __CLASS__, 'get_entry' ),
             'permission_callback' => array( __CLASS__, 'check_permission' )
         ) );
+
+        // Review entry (AI)
+        register_rest_route( self::NAMESPACE, '/entries/(?P<id>\d+)/review', array(
+            'methods' => 'POST',
+            'callback' => array( __CLASS__, 'review_entry' ),
+            'permission_callback' => array( __CLASS__, 'check_permission' )
+        ) );
     }
 
     /**
@@ -112,5 +119,49 @@ class DiaryCoach_REST_API {
         }
 
         return rest_ensure_response( $entry );
+    }
+
+    /**
+     * Review entry endpoint (AI)
+     */
+    public static function review_entry( $request ) {
+        $id = intval( $request->get_param( 'id' ) );
+
+        // Get entry
+        $entry = DiaryCoach_Database::get_entry( $id );
+
+        if ( empty( $entry ) ) {
+            return new WP_Error(
+                'entry_not_found',
+                'Entry not found',
+                array( 'status' => 404 )
+            );
+        }
+
+        // Check if already reviewed (optional - allow re-review)
+        // if ( ! empty( $entry['review_json'] ) ) {
+        //     return rest_ensure_response( json_decode( $entry['review_json'], true ) );
+        // }
+
+        // Call OpenAI API
+        $review = DiaryCoach_OpenAI::review_entry( $entry['original_text'] );
+
+        if ( is_wp_error( $review ) ) {
+            return $review;
+        }
+
+        // Save review to database
+        $review_json = json_encode( $review, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES );
+        $saved = DiaryCoach_Database::update_review( $id, $review_json );
+
+        if ( ! $saved ) {
+            return new WP_Error(
+                'save_failed',
+                'Failed to save review',
+                array( 'status' => 500 )
+            );
+        }
+
+        return rest_ensure_response( $review );
     }
 }

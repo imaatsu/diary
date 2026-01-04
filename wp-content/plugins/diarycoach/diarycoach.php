@@ -16,6 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Load required classes
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-diarycoach-database.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/class-diarycoach-openai.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-diarycoach-rest-api.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-diarycoach-shortcode.php';
 

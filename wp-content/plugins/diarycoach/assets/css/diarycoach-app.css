@@ -218,9 +218,119 @@
 
 .diarycoach-detail-review h4 {
     margin-top: 0;
-    margin-bottom: 10px;
+    margin-bottom: 15px;
     color: #555;
     font-size: 16px;
+}
+
+.diarycoach-detail-review h5 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: #666;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* Review Button */
+.diarycoach-btn-review {
+    background-color: #10a37f;
+    color: white;
+    padding: 12px 24px;
+    font-size: 15px;
+    font-weight: 500;
+}
+
+.diarycoach-btn-review:hover {
+    background-color: #0d8c6b;
+}
+
+/* Review Sections */
+.diarycoach-review-section {
+    margin-bottom: 20px;
+}
+
+.diarycoach-review-section:last-child {
+    margin-bottom: 0;
+}
+
+/* Corrected Text */
+.diarycoach-review-corrected {
+    background-color: #e8f5e9;
+    padding: 12px 15px;
+    border-left: 4px solid #4caf50;
+    border-radius: 4px;
+    line-height: 1.6;
+    color: #2e7d32;
+    margin: 0;
+}
+
+/* Alternatives List */
+.diarycoach-review-alternatives {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.diarycoach-review-alternatives li {
+    background-color: #e3f2fd;
+    padding: 10px 15px;
+    border-left: 4px solid #2196f3;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    line-height: 1.6;
+    color: #1565c0;
+}
+
+.diarycoach-review-alternatives li:last-child {
+    margin-bottom: 0;
+}
+
+/* Notes List */
+.diarycoach-review-notes {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.diarycoach-review-notes li {
+    background-color: #fff3e0;
+    padding: 10px 15px;
+    border-left: 4px solid #ff9800;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    line-height: 1.6;
+    color: #e65100;
+}
+
+.diarycoach-review-notes li:last-child {
+    margin-bottom: 0;
+}
+
+/* Read Aloud */
+.diarycoach-review-readaloud {
+    background-color: #f3e5f5;
+    padding: 12px 15px;
+    border-left: 4px solid #9c27b0;
+    border-radius: 4px;
+    line-height: 1.6;
+    color: #6a1b9a;
+    margin: 0 0 10px 0;
+}
+
+.diarycoach-btn-speak {
+    background-color: #9c27b0;
+    color: white;
+}
+
+.diarycoach-btn-speak:hover {
+    background-color: #7b1fa2;
+}
+
+/* Message Info */
+.diarycoach-message-info {
+    background-color: #e3f2fd;
+    color: #1565c0;
+    border: 1px solid #90caf9;
 }
 
 /* Responsive Design */
